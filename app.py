@@ -1,26 +1,70 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, session
 import pandas as pd
 import os
 from dotenv import load_dotenv
 import requests
+import logging
+from logging.handlers import RotatingFileHandler
+import json
+
+# 加载环境变量
+load_dotenv()
+
+# 配置日志
+logging.basicConfig(
+    level=os.getenv('LOG_LEVEL', 'INFO'),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# 基础配置
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16)) * 1024 * 1024  # 转换为字节
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev')
+app.config['DEBUG'] = os.getenv('DEBUG', 'false').lower() == 'true'
 
 # 确保上传文件夹存在
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# 加载环境变量
-load_dotenv()
+# API配置文件路径
+API_CONFIG_FILE = 'api_config.json'
+
+def load_api_config():
+    """加载API配置"""
+    if os.path.exists(API_CONFIG_FILE):
+        try:
+            with open(API_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"加载API配置失败: {str(e)}")
+    return {
+        'url': os.getenv('TRANSLATION_API_URL', ''),
+        'key': os.getenv('TRANSLATION_API_KEY', ''),
+        'prompt': os.getenv('TRANSLATION_PROMPT', '请将以下文本翻译成中文，保持专业性和准确性：')
+    }
+
+def save_api_config(config):
+    """保存API配置"""
+    try:
+        with open(API_CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        logger.error(f"保存API配置失败: {str(e)}")
+        return False
 
 def translate_text(text, api_config):
     """
     使用自定义API进行翻译
     """
-    api_url = api_config.get('url', os.getenv('TRANSLATION_API_URL'))
-    api_key = api_config.get('key', os.getenv('TRANSLATION_API_KEY'))
-    prompt = api_config.get('prompt', os.getenv('TRANSLATION_PROMPT', '请将以下文本翻译成中文：'))
+    api_url = api_config.get('url')
+    api_key = api_config.get('key')
+    prompt = api_config.get('prompt')
+    
+    if not api_url or not api_key:
+        return "错误：请先配置API信息"
     
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -33,15 +77,33 @@ def translate_text(text, api_config):
     }
     
     try:
+        logger.info(f"正在翻译文本: {text[:50]}...")
         response = requests.post(api_url, headers=headers, json=data)
         response.raise_for_status()
-        return response.json()["translated_text"]
+        translated_text = response.json()["translated_text"]
+        logger.info("翻译成功")
+        return translated_text
     except Exception as e:
+        logger.error(f"翻译错误: {str(e)}")
         return f"翻译错误: {str(e)}"
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    api_config = load_api_config()
+    return render_template('index.html', api_config=api_config)
+
+@app.route('/api/config', methods=['GET'])
+def get_api_config():
+    """获取API配置"""
+    return jsonify(load_api_config())
+
+@app.route('/api/config', methods=['POST'])
+def update_api_config():
+    """更新API配置"""
+    config = request.json
+    if save_api_config(config):
+        return jsonify({"message": "配置已更新"})
+    return jsonify({"error": "保存配置失败"}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -56,6 +118,7 @@ def upload_file():
         return jsonify({"error": "只支持Excel文件"}), 400
     
     try:
+        logger.info(f"开始处理文件: {file.filename}")
         # 读取Excel文件
         df = pd.read_excel(file)
         
@@ -64,11 +127,7 @@ def upload_file():
             return jsonify({"error": "Excel文件为空"}), 400
         
         # 获取API配置
-        api_config = {
-            'url': request.form.get('api_url'),
-            'key': request.form.get('api_key'),
-            'prompt': request.form.get('prompt')
-        }
+        api_config = load_api_config()
         
         # 翻译A列
         df['A'] = df['A'].apply(lambda x: translate_text(str(x), api_config))
@@ -76,6 +135,7 @@ def upload_file():
         # 保存翻译后的文件
         output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'translated_' + file.filename)
         df.to_excel(output_path, index=False)
+        logger.info(f"文件处理完成: {output_path}")
         
         return jsonify({
             "message": "翻译完成",
@@ -83,6 +143,7 @@ def upload_file():
         })
     
     except Exception as e:
+        logger.error(f"处理文件时出错: {str(e)}")
         return jsonify({"error": f"处理文件时出错: {str(e)}"}), 500
 
 @app.route('/download/<filename>')
@@ -90,4 +151,6 @@ def download_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    host = os.getenv('HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', 5000))
+    app.run(host=host, port=port, debug=app.config['DEBUG']) 

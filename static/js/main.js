@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const apiUrlInput = document.getElementById('apiUrl');
     const apiKeyInput = document.getElementById('apiKey');
     const promptInput = document.getElementById('prompt');
+    const saveConfigBtn = document.getElementById('saveConfig');
 
     // 从localStorage加载保存的API配置
     const savedApiUrl = localStorage.getItem('apiUrl');
@@ -17,6 +18,35 @@ document.addEventListener('DOMContentLoaded', function() {
     if (savedApiKey) apiKeyInput.value = savedApiKey;
     if (savedPrompt) promptInput.value = savedPrompt;
 
+    // 保存API配置
+    saveConfigBtn.addEventListener('click', async function() {
+        const config = {
+            url: apiUrlInput.value.trim(),
+            key: apiKeyInput.value.trim(),
+            prompt: promptInput.value.trim()
+        };
+
+        try {
+            const response = await fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showStatus('API配置已保存', 'success');
+            } else {
+                showStatus(data.error || '保存配置失败', 'error');
+            }
+        } catch (error) {
+            showStatus('保存配置时出错：' + error.message, 'error');
+        }
+    });
+
     uploadForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -26,16 +56,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 保存API配置到localStorage
-        localStorage.setItem('apiUrl', apiUrlInput.value);
-        localStorage.setItem('apiKey', apiKeyInput.value);
-        localStorage.setItem('prompt', promptInput.value);
-
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('api_url', apiUrlInput.value);
-        formData.append('api_key', apiKeyInput.value);
-        formData.append('prompt', promptInput.value);
 
         try {
             showStatus('正在上传并翻译文件...', 'info');

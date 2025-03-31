@@ -38,6 +38,7 @@ h2 {
     padding: 1.5rem;
     background-color: #f8f9fa;
     border-radius: 8px;
+    border: 1px solid #e9ecef;
 }
 
 .api-form {
@@ -54,6 +55,7 @@ h2 {
 .form-group label {
     font-weight: 500;
     color: #2c3e50;
+    font-size: 0.9rem;
 }
 
 .form-group input {
@@ -61,12 +63,17 @@ h2 {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .form-group input:focus {
     outline: none;
     border-color: #3498db;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.form-group input[type="password"] {
+    letter-spacing: 0.1em;
 }
 
 .file-input-wrapper {
@@ -110,20 +117,38 @@ input[type="file"] {
     background-color: #27ae60;
 }
 
+#saveConfig {
+    background-color: #3498db;
+    margin-top: 1rem;
+}
+
+#saveConfig:hover {
+    background-color: #2980b9;
+}
+
 .status-section {
     margin: 1rem 0;
     padding: 1rem;
     border-radius: 4px;
+    text-align: center;
 }
 
 .status-section.success {
     background-color: #d4edda;
     color: #155724;
+    border: 1px solid #c3e6cb;
 }
 
 .status-section.error {
     background-color: #f8d7da;
     color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-section.info {
+    background-color: #cce5ff;
+    color: #004085;
+    border: 1px solid #b8daff;
 }
 
 .feedback-form textarea {
@@ -134,9 +159,24 @@ input[type="file"] {
     border: 1px solid #ddd;
     border-radius: 4px;
     resize: vertical;
+    font-family: inherit;
 }
 
 .feedback-form textarea:focus {
     outline: none;
     border-color: #3498db;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        margin: 1rem;
+        padding: 1rem;
+    }
+    
+    .api-config-section,
+    .upload-section,
+    .feedback-section {
+        padding: 1rem;
+    }
 } 
