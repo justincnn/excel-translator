@@ -28,6 +28,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/excel-translator:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/excel-translator:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/excel-translator:buildcache,mode=max 
+          tags: justincnn/excel-translator:latest
+          cache-from: type=registry,ref=justincnn/excel-translator:buildcache
+          cache-to: type=registry,ref=justincnn/excel-translator:buildcache,mode=max 
