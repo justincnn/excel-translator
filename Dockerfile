@@ -9,14 +9,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# 创建虚拟环境
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# 升级pip和安装基础工具
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
 # 复制依赖文件
 COPY requirements.txt .
 
-# 创建虚拟环境并安装依赖
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir numpy==1.23.5 && \
+# 分步安装依赖
+RUN pip install --no-cache-dir numpy==1.23.5 && \
+    pip install --no-cache-dir pandas==1.5.3 && \
     pip install --no-cache-dir -r requirements.txt
 
 # 最终镜像
