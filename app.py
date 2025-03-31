@@ -240,7 +240,7 @@ def add_header(response):
 
 if __name__ == '__main__':
     try:
-        host = os.getenv('HOST', '0.0.0.0')
+        host = '0.0.0.0'  # 始终监听所有网络接口
         port = int(os.getenv('PORT', 6763))
         logger.info(f"启动服务器: {host}:{port}")
         app.run(host=host, port=port, debug=app.config['DEBUG'])

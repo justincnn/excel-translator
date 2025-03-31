@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "${PORT:-6763}:5000"
+      - "0.0.0.0:${PORT:-6763}:5000"
     volumes:
       - ./uploads:/app/uploads
       - ./.env:/app/.env
@@ -24,7 +24,7 @@ services:
       - USE_HTTPS=${USE_HTTPS:-false}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

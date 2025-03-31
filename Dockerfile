@@ -32,11 +32,15 @@ ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 
+# 确保应用监听所有网络接口
+ENV HOST=0.0.0.0
+
+# 暴露容器内部端口
 EXPOSE 5000
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/ || exit 1
+    CMD curl -f http://localhost:5000/health || exit 1
 
 # 激活conda环境并运行应用
 CMD ["conda", "run", "--no-capture-output", "-n", "app-env", "python", "app.py"] 
