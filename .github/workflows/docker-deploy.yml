@@ -21,6 +21,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          server: https://index.docker.io/v1/
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
