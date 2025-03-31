@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM python:3.9-slim as builder
+FROM --platform=$BUILDPLATFORM python:3.8-slim as builder
 
 WORKDIR /app
 
@@ -20,12 +20,12 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 COPY requirements.txt .
 
 # 分步安装依赖
-RUN pip install --no-cache-dir numpy==1.23.5 && \
-    pip install --no-cache-dir pandas==1.5.3 && \
+RUN pip install --no-cache-dir numpy==1.21.6 && \
+    pip install --no-cache-dir pandas==1.3.5 && \
     pip install --no-cache-dir -r requirements.txt
 
 # 最终镜像
-FROM --platform=$TARGETPLATFORM python:3.9-slim
+FROM --platform=$TARGETPLATFORM python:3.8-slim
 
 WORKDIR /app
 
