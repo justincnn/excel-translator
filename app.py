@@ -241,7 +241,7 @@ def add_header(response):
 if __name__ == '__main__':
     try:
         host = '0.0.0.0'  # 始终监听所有网络接口
-        port = int(os.getenv('PORT', 6763))
+        port = int(os.getenv('PORT', 5000))  # 默认使用5000端口与Docker配置匹配
         logger.info(f"启动服务器: {host}:{port}")
         app.run(host=host, port=port, debug=app.config['DEBUG'])
     except Exception as e:
