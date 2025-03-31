@@ -1,59 +1,30 @@
-FROM --platform=$BUILDPLATFORM python:3.8-slim as builder
+FROM continuumio/miniconda3:latest
 
 WORKDIR /app
 
-# 安装构建依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# 创建虚拟环境
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# 升级pip和安装基础工具
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# 复制依赖文件
-COPY requirements.txt .
-
-# 分步安装依赖
-RUN pip install --no-cache-dir numpy==1.21.6 && \
-    pip install --no-cache-dir pandas==1.3.5 && \
-    pip install --no-cache-dir -r requirements.txt
-
-# 最终镜像
-FROM --platform=$TARGETPLATFORM python:3.8-slim
-
-WORKDIR /app
-
-# 安装运行时依赖
+# 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 从构建阶段复制虚拟环境
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# 创建conda环境
+RUN conda create -n app-env python=3.8 -y && \
+    conda install -n app-env -c conda-forge numpy=1.21.6 pandas=1.3.5 flask=2.3.3 openpyxl=3.1.2 python-dotenv=1.0.0 requests=2.31.0 gunicorn=21.2.0 flask-cors=4.0.0 -y && \
+    conda clean -afy
 
-# 创建非root用户
-RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app/uploads && \
-    chown -R appuser:appuser /app
+# 设置环境变量
+ENV PATH /opt/conda/envs/app-env/bin:$PATH
 
 # 复制应用代码
-COPY --chown=appuser:appuser . .
+COPY . .
+
+# 创建上传目录
+RUN mkdir -p uploads && chmod 777 uploads
 
 # 设置环境变量
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
-
-# 切换到非root用户
-USER appuser
 
 EXPOSE 5000
 
@@ -61,4 +32,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
-CMD ["python", "app.py"] 
+# 激活conda环境并运行应用
+CMD ["conda", "run", "--no-capture-output", "-n", "app-env", "python", "app.py"] 

@@ -36,4 +36,6 @@ jobs:
             justincnn/excel-translator:latest
             justincnn/excel-translator:${{ github.sha }}
           cache-from: type=registry,ref=justincnn/excel-translator:buildcache
-          cache-to: type=registry,ref=justincnn/excel-translator:buildcache,mode=max 
+          cache-to: type=registry,ref=justincnn/excel-translator:buildcache,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1 
