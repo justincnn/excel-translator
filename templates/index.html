@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel翻译工具</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Excel翻译工具</h1>
+        <div class="api-config-section">
+            <h2>API配置</h2>
+            <div class="api-form">
+                <div class="form-group">
+                    <label for="apiUrl">API地址</label>
+                    <input type="text" id="apiUrl" placeholder="输入API地址">
+                </div>
+                <div class="form-group">
+                    <label for="apiKey">API密钥</label>
+                    <input type="password" id="apiKey" placeholder="输入API密钥">
+                </div>
+                <div class="form-group">
+                    <label for="prompt">翻译提示词</label>
+                    <input type="text" id="prompt" placeholder="输入翻译提示词">
+                </div>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <h2>文件上传</h2>
+            <form id="uploadForm">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" accept=".xlsx,.xls" required>
+                    <label for="fileInput" class="file-label">选择Excel文件</label>
+                </div>
+                <button type="submit" class="submit-btn">开始翻译</button>
+            </form>
+        </div>
+        
+        <div id="status" class="status-section"></div>
+        
+        <div class="feedback-section">
+            <h2>翻译反馈</h2>
+            <div class="feedback-form">
+                <textarea id="feedbackText" placeholder="请输入您对翻译结果的反馈..."></textarea>
+                <button id="submitFeedback" class="submit-btn">提交反馈</button>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 

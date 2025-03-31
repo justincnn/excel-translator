@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  web:
+    image: ${DOCKER_IMAGE:-excel-translator:latest}
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./.env:/app/.env
+    environment:
+      - FLASK_ENV=production
+      - TRANSLATION_API_URL=${TRANSLATION_API_URL}
+      - TRANSLATION_API_KEY=${TRANSLATION_API_KEY}
+      - TRANSLATION_PROMPT=${TRANSLATION_PROMPT}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3 
