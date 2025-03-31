@@ -13,7 +13,11 @@ load_dotenv()
 # 配置日志
 logging.basicConfig(
     level=os.getenv('LOG_LEVEL', 'INFO'),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        RotatingFileHandler('app.log', maxBytes=1024*1024, backupCount=5),
+        logging.StreamHandler()
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -89,21 +93,37 @@ def translate_text(text, api_config):
 
 @app.route('/')
 def index():
-    api_config = load_api_config()
-    return render_template('index.html', api_config=api_config)
+    try:
+        api_config = load_api_config()
+        logger.info("成功加载首页")
+        return render_template('index.html', api_config=api_config)
+    except Exception as e:
+        logger.error(f"加载首页失败: {str(e)}")
+        return "加载页面失败", 500
 
 @app.route('/api/config', methods=['GET'])
 def get_api_config():
     """获取API配置"""
-    return jsonify(load_api_config())
+    try:
+        config = load_api_config()
+        logger.info("成功获取API配置")
+        return jsonify(config)
+    except Exception as e:
+        logger.error(f"获取API配置失败: {str(e)}")
+        return jsonify({"error": "获取配置失败"}), 500
 
 @app.route('/api/config', methods=['POST'])
 def update_api_config():
     """更新API配置"""
-    config = request.json
-    if save_api_config(config):
-        return jsonify({"message": "配置已更新"})
-    return jsonify({"error": "保存配置失败"}), 500
+    try:
+        config = request.json
+        if save_api_config(config):
+            logger.info("成功更新API配置")
+            return jsonify({"message": "配置已更新"})
+        return jsonify({"error": "保存配置失败"}), 500
+    except Exception as e:
+        logger.error(f"更新API配置失败: {str(e)}")
+        return jsonify({"error": "更新配置失败"}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -148,9 +168,17 @@ def upload_file():
 
 @app.route('/download/<filename>')
 def download_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+    except Exception as e:
+        logger.error(f"下载文件失败: {str(e)}")
+        return "下载文件失败", 500
 
 if __name__ == '__main__':
-    host = os.getenv('HOST', '0.0.0.0')
-    port = int(os.getenv('PORT', 6763))
-    app.run(host=host, port=port, debug=app.config['DEBUG']) 
+    try:
+        host = os.getenv('HOST', '0.0.0.0')
+        port = int(os.getenv('PORT', 6763))
+        logger.info(f"启动服务器: {host}:{port}")
+        app.run(host=host, port=port, debug=app.config['DEBUG'])
+    except Exception as e:
+        logger.error(f"服务器启动失败: {str(e)}") 
