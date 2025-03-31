@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data.models.forEach(model => {
                 const option = document.createElement('option');
                 option.value = model.id;
-                option.textContent = model.name || model.id;
+                option.textContent = model.id.split(':').pop() || model.id;
                 
                 // 如果与保存的值匹配，则选中
                 if (model.id === localStorage.getItem('model')) {

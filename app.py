@@ -300,49 +300,61 @@ def update_api_config():
         logger.error(f"更新API配置失败: {str(e)}")
         return jsonify({"error": "更新配置失败"}), 500
 
-@app.route('/api/models', methods=['GET'])
+@app.route('/api/models')
 def get_models():
     """获取可用的AI模型列表"""
     try:
-        config = db_load_api_config()
-        api_url = config.get('url')
-        api_key = config.get('key')
-        
-        if not api_url or not api_key:
-            return jsonify({"error": "请先配置API URL和密钥"}), 400
-        
-        # 尝试从API获取模型列表
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        # 提取API的基础URL
-        base_url = api_url.split('/v1/')[0] if '/v1/' in api_url else api_url
-        models_url = f"{base_url}/v1/models"
-        
+        api_config = load_api_config()
+        if not api_config.get('url') or not api_config.get('key'):
+            return jsonify({
+                'success': False,
+                'message': '请先配置API URL和密钥'
+            }), 400
+
+        # 构建请求URL
+        models_url = f"{api_config['url'].rstrip('/')}/v1/models"
         logger.info(f"请求模型列表: {models_url}")
-        response = requests.get(models_url, headers=headers)
-        response.raise_for_status()
         
-        models_data = response.json()
+        # 发送请求获取模型列表
+        response = requests.get(
+            models_url,
+            headers={
+                'Authorization': f'Bearer {api_config["key"]}',
+                'Content-Type': 'application/json'
+            },
+            timeout=10
+        )
         
-        # 格式化模型列表，通常API返回的格式类似 {"data": [{...}, {...}]}
-        models = []
-        if 'data' in models_data:
-            models = [{"id": model.get("id"), "name": model.get("id").split(':')[-1] if ':' in model.get("id", "") else model.get("id")} 
-                     for model in models_data.get('data', [])]
+        # 检查响应状态
+        if response.status_code == 200:
+            models_data = response.json()
+            logger.info(f"成功获取模型列表: {models_data}")
+            return jsonify({
+                'success': True,
+                'models': models_data.get('data', [])
+            })
         else:
-            # 尝试其他可能的格式
-            models = [{"id": model.get("id"), "name": model.get("id")} 
-                     for model in models_data if model.get("id")]
-        
-        logger.info(f"成功获取模型列表，共 {len(models)} 个模型")
-        return jsonify({"models": models})
-    
+            error_msg = f"获取模型列表失败: {response.status_code} - {response.text}"
+            logger.error(error_msg)
+            return jsonify({
+                'success': False,
+                'message': error_msg
+            }), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        error_msg = f"请求模型列表时发生错误: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            'success': False,
+            'message': error_msg
+        }), 500
     except Exception as e:
-        logger.error(f"获取模型列表失败: {str(e)}")
-        return jsonify({"error": f"获取模型列表失败: {str(e)}"}), 500
+        error_msg = f"获取模型列表时发生错误: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({
+            'success': False,
+            'message': error_msg
+        }), 500
 
 @app.route('/api/history', methods=['GET'])
 def get_translation_history():
