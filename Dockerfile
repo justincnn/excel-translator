@@ -5,6 +5,7 @@ WORKDIR /app
 # 安装构建依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖文件
@@ -20,20 +21,35 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
+# 安装运行时依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # 从构建阶段复制虚拟环境
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# 复制应用代码
-COPY . .
+# 创建非root用户
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app/uploads && \
+    chown -R appuser:appuser /app
 
-# 创建上传目录
-RUN mkdir -p uploads
+# 复制应用代码
+COPY --chown=appuser:appuser . .
 
 # 设置环境变量
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
+ENV PYTHONUNBUFFERED=1
+
+# 切换到非root用户
+USER appuser
 
 EXPOSE 5000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/ || exit 1
 
 CMD ["python", "app.py"] 
