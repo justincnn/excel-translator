@@ -248,10 +248,11 @@ def translate_text(text, api_config):
         
         return f"翻译错误: {str(e)}"
 
-@app.before_first_request
-def before_first_request():
-    """应用启动时执行的操作"""
+# 替换被移除的before_first_request
+# 初始化数据库
+with app.app_context():
     init_db()
+    logger.info("应用启动时初始化数据库")
 
 @app.route('/favicon.ico')
 def favicon():
@@ -544,7 +545,7 @@ def add_header(response):
 if __name__ == '__main__':
     try:
         # 确保数据库初始化
-        init_db()
+        # init_db()  # 移除这行，因为我们已经在app.app_context()中初始化了
         
         host = '0.0.0.0'  # 始终监听所有网络接口
         port = int(os.getenv('PORT', 5000))  # 默认使用5000端口与Docker配置匹配
