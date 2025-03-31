@@ -1,4 +1,4 @@
-FROM python:3.9-slim as builder
+FROM --platform=$BUILDPLATFORM python:3.9-slim as builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 最终镜像
-FROM python:3.9-slim
+FROM --platform=$TARGETPLATFORM python:3.9-slim
 
 WORKDIR /app
 
