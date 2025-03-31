@@ -6,6 +6,7 @@ import requests
 import logging
 from logging.handlers import RotatingFileHandler
 import json
+from flask_cors import CORS
 
 # 加载环境变量
 load_dotenv()
@@ -21,11 +22,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+# 获取构建信息
+BUILD_DATE = os.getenv('BUILD_DATE', 'dev')
+BUILD_VERSION = os.getenv('BUILD_VERSION', 'dev')
+
+app = Flask(__name__, static_folder='static', template_folder='templates')
+CORS(app)  # 启用CORS
 
 # 基础配置
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16)) * 1024 * 1024  # 转换为字节
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16777216))  # 默认16MB
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev')
 app.config['DEBUG'] = os.getenv('DEBUG', 'false').lower() == 'true'
 
@@ -91,11 +97,23 @@ def translate_text(text, api_config):
         logger.error(f"翻译错误: {str(e)}")
         return f"翻译错误: {str(e)}"
 
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
+
+@app.before_request
+def before_request():
+    """在请求前执行的操作"""
+    # 添加构建信息到环境变量中，以便在模板中使用
+    request.environ['BUILD_DATE'] = BUILD_DATE
+    request.environ['BUILD_VERSION'] = BUILD_VERSION
+
 @app.route('/')
 def index():
     try:
         api_config = load_api_config()
         logger.info("成功加载首页")
+        logger.info(f"构建时间: {BUILD_DATE}, 版本: {BUILD_VERSION}")
         return render_template('index.html', api_config=api_config)
     except Exception as e:
         logger.error(f"加载首页失败: {str(e)}")
@@ -173,6 +191,52 @@ def download_file(filename):
     except Exception as e:
         logger.error(f"下载文件失败: {str(e)}")
         return "下载文件失败", 500
+
+@app.route('/health')
+def health_check():
+    """健康检查端点"""
+    return jsonify({
+        "status": "ok",
+        "version": BUILD_VERSION,
+        "build_date": BUILD_DATE,
+        "uptime": "服务正常运行"
+    })
+
+@app.route('/diagnostics')
+def diagnostics():
+    """诊断信息端点"""
+    config = load_api_config()
+    # 隐藏API密钥
+    if 'key' in config:
+        config['key'] = '***' if config['key'] else ''
+    
+    diag_info = {
+        "status": "ok",
+        "version": BUILD_VERSION,
+        "build_date": BUILD_DATE,
+        "python_version": os.sys.version,
+        "api_config": config,
+        "env_vars": {
+            "FLASK_ENV": os.getenv('FLASK_ENV', 'not set'),
+            "DEBUG": app.config['DEBUG'],
+            "MAX_CONTENT_LENGTH": app.config['MAX_CONTENT_LENGTH'],
+            "UPLOAD_FOLDER": app.config['UPLOAD_FOLDER'],
+            "UPLOAD_FOLDER_EXISTS": os.path.exists(app.config['UPLOAD_FOLDER']),
+            "STATIC_FOLDER": app.static_folder,
+            "STATIC_FOLDER_EXISTS": os.path.exists(app.static_folder) if app.static_folder else False,
+            "TEMPLATE_FOLDER": app.template_folder,
+            "TEMPLATE_FOLDER_EXISTS": os.path.exists(app.template_folder) if app.template_folder else False
+        }
+    }
+    return jsonify(diag_info)
+
+@app.after_request
+def add_header(response):
+    """添加必要的响应头"""
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 if __name__ == '__main__':
     try:

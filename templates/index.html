@@ -3,10 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Excel翻译工具</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ request.environ.get('BUILD_VERSION', '') }}">
 </head>
 <body>
+    <noscript>
+        <div class="noscript-message">
+            <h2>请启用JavaScript</h2>
+            <p>本应用需要JavaScript才能正常工作。请启用浏览器的JavaScript功能后刷新页面。</p>
+        </div>
+    </noscript>
+    
     <div class="container">
         <h1>Excel翻译工具</h1>
         
@@ -49,7 +59,24 @@
                 <button id="submitFeedback" class="submit-btn">提交反馈</button>
             </div>
         </div>
+
+        <div class="debug-info">
+            <small>构建时间: {{ request.environ.get('BUILD_DATE', 'unknown') }}</small>
+        </div>
     </div>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v={{ request.environ.get('BUILD_VERSION', '') }}"></script>
+    <script>
+        // 页面加载检查
+        console.log('页面已加载');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM内容已加载');
+            // 显示初始状态
+            const statusSection = document.getElementById('status');
+            if (statusSection) {
+                statusSection.textContent = '应用已准备就绪';
+                statusSection.className = 'status-section info';
+            }
+        });
+    </script>
 </body>
 </html> 

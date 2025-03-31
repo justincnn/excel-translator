@@ -26,6 +26,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           server: https://index.docker.io/v1/
 
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d-%H-%M')"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
@@ -38,4 +42,6 @@ jobs:
           cache-from: type=registry,ref=justincnn/excel-translator:buildcache
           cache-to: type=registry,ref=justincnn/excel-translator:buildcache,mode=max
           build-args: |
-            BUILDKIT_INLINE_CACHE=1 
+            BUILDKIT_INLINE_CACHE=1
+            BUILD_DATE=${{ steps.date.outputs.date }}
+            BUILD_VERSION=${{ github.sha }} 

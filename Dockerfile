@@ -2,6 +2,10 @@ FROM continuumio/miniconda3:latest
 
 WORKDIR /app
 
+# 设置构建参数
+ARG BUILD_DATE=unknown
+ARG BUILD_VERSION=latest
+
 # 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -14,6 +18,8 @@ RUN conda create -n app-env python=3.8 -y && \
 
 # 设置环境变量
 ENV PATH /opt/conda/envs/app-env/bin:$PATH
+ENV BUILD_DATE=${BUILD_DATE}
+ENV BUILD_VERSION=${BUILD_VERSION}
 
 # 复制应用代码
 COPY . .
