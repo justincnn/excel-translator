@@ -20,43 +20,97 @@
     <div class="container">
         <h1>Excel翻译工具</h1>
         
-        <div class="api-config-section">
-            <h2>API配置</h2>
-            <div class="api-form">
-                <div class="form-group">
-                    <label for="apiUrl">API地址</label>
-                    <input type="text" id="apiUrl" value="{{ api_config.url }}" placeholder="输入API地址">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="main">翻译</button>
+            <button class="tab-btn" data-tab="history">历史记录</button>
+        </div>
+        
+        <div class="tab-content active" id="main-tab">
+            <div class="api-config-section">
+                <h2>API配置</h2>
+                <div class="api-form">
+                    <div class="form-group">
+                        <label for="apiUrl">API地址</label>
+                        <input type="text" id="apiUrl" value="{{ api_config.url }}" placeholder="输入API地址">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiKey">API密钥</label>
+                        <input type="password" id="apiKey" value="{{ api_config.key }}" placeholder="输入API密钥">
+                    </div>
+                    <div class="form-group">
+                        <label for="prompt">翻译提示词</label>
+                        <input type="text" id="prompt" value="{{ api_config.prompt }}" placeholder="输入翻译提示词">
+                    </div>
+                    <div class="form-group">
+                        <label for="model">AI模型</label>
+                        <div class="model-selection-container">
+                            <select id="model" class="model-select">
+                                <option value="">请选择模型</option>
+                                {% if api_config.model %}
+                                <option value="{{ api_config.model }}" selected>{{ api_config.model }}</option>
+                                {% endif %}
+                            </select>
+                            <button id="refreshModels" type="button" class="refresh-btn" title="刷新模型列表">
+                                <span>&#8635;</span>
+                            </button>
+                        </div>
+                        <small class="form-hint">请先保存API配置，然后点击刷新图标获取可用模型</small>
+                    </div>
+                    <button id="saveConfig" class="submit-btn">保存配置</button>
                 </div>
-                <div class="form-group">
-                    <label for="apiKey">API密钥</label>
-                    <input type="password" id="apiKey" value="{{ api_config.key }}" placeholder="输入API密钥">
+            </div>
+            
+            <div class="upload-section">
+                <h2>文件上传</h2>
+                <form id="uploadForm">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" required>
+                        <label for="fileInput" class="file-label">选择Excel文件</label>
+                    </div>
+                    <button type="submit" class="submit-btn">开始翻译</button>
+                </form>
+            </div>
+            
+            <div id="status" class="status-section"></div>
+            
+            <div class="feedback-section">
+                <h2>翻译反馈</h2>
+                <div class="feedback-form">
+                    <textarea id="feedbackText" placeholder="请输入您对翻译结果的反馈..."></textarea>
+                    <button id="submitFeedback" class="submit-btn">提交反馈</button>
                 </div>
-                <div class="form-group">
-                    <label for="prompt">翻译提示词</label>
-                    <input type="text" id="prompt" value="{{ api_config.prompt }}" placeholder="输入翻译提示词">
-                </div>
-                <button id="saveConfig" class="submit-btn">保存配置</button>
             </div>
         </div>
         
-        <div class="upload-section">
-            <h2>文件上传</h2>
-            <form id="uploadForm">
-                <div class="file-input-wrapper">
-                    <input type="file" id="fileInput" accept=".xlsx,.xls" required>
-                    <label for="fileInput" class="file-label">选择Excel文件</label>
+        <div class="tab-content" id="history-tab">
+            <div class="history-section">
+                <h2>翻译历史记录</h2>
+                <div class="history-controls">
+                    <button id="refreshHistory" class="refresh-btn">刷新历史记录</button>
                 </div>
-                <button type="submit" class="submit-btn">开始翻译</button>
-            </form>
-        </div>
-        
-        <div id="status" class="status-section"></div>
-        
-        <div class="feedback-section">
-            <h2>翻译反馈</h2>
-            <div class="feedback-form">
-                <textarea id="feedbackText" placeholder="请输入您对翻译结果的反馈..."></textarea>
-                <button id="submitFeedback" class="submit-btn">提交反馈</button>
+                <div class="history-table-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>文件名</th>
+                                <th>原文</th>
+                                <th>译文</th>
+                                <th>时间</th>
+                                <th>模型</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- 历史记录将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <button id="prevPage" class="pagination-btn">&laquo; 上一页</button>
+                    <span id="pageInfo">第 <span id="currentPage">1</span> 页，共 <span id="totalPages">1</span> 页</span>
+                    <button id="nextPage" class="pagination-btn">下一页 &raquo;</button>
+                </div>
             </div>
         </div>
 
